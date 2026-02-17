@@ -1,5 +1,7 @@
 # ast-deobfuscator
 
+[![CI](https://github.com/JJm030501/AST/actions/workflows/ci.yml/badge.svg)](https://github.com/JJm030501/AST/actions/workflows/ci.yml)
+
 A Babel-based JavaScript deobfuscation CLI tool with 17 transformation plugins, webpack module extraction, and VM bytecode analysis.
 
 Built from real-world reverse engineering needs — tested against production obfuscated code from major platforms (170KB+ files, custom VM interpreters, bitwise control flow).
