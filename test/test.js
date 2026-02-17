@@ -492,6 +492,86 @@ var s = _0xdec(0x0);`,
   1
 );
 
+// ── 变量重命名 ──
+console.log("\n── 变量重命名 ──");
+const renameVars = require("../src/plugins/rename_vars");
+test(
+  "_0x1a2b3c → _v1 (局部变量)",
+  '(function(){ var _0x1a2b3c = 1; console.log(_0x1a2b3c); })();',
+  renameVars,
+  (actual) => !actual.includes("_0x1a2b3c") && actual.includes("console.log(")
+);
+test(
+  "_0xabcdef 全局变量不重命名",
+  'var _0xabcdef = 1; console.log(_0xabcdef);',
+  renameVars,
+  'var _0xabcdef = 1;\nconsole.log(_0xabcdef);'
+);
+test(
+  "a0_0x 变体识别",
+  '(function(){ var a0_0x1234 = "test"; return a0_0x1234; })();',
+  renameVars,
+  (actual) => !actual.includes("a0_0x1234")
+);
+test(
+  "普通变量名不重命名",
+  '(function(){ var count = 1; return count; })();',
+  renameVars,
+  '(function () {\n  var count = 1;\n  return count;\n})();'
+);
+
+// ── 死代码删除 (边界) ──
+console.log("\n── 死代码删除 (边界) ──");
+test(
+  "未引用变量 (字面量初始化) → 删除",
+  '(function(){ var unused = 42; var used = 1; console.log(used); })();',
+  deadCode,
+  '(function () {\n  var used = 1;\n  console.log(used);\n})();'
+);
+test(
+  "未引用变量 (二元表达式) → 删除",
+  '(function(){ var x = a >> 5; var y = 1; console.log(y); })();',
+  deadCode,
+  '(function () {\n  var y = 1;\n  console.log(y);\n})();'
+);
+test(
+  "return 后的代码 → 删除",
+  '(function(){ return 1; console.log("dead"); var x = 2; })();',
+  deadCode,
+  '(function () {\n  return 1;\n})();'
+);
+
+// ── 常量折叠 (边界) ──
+console.log("\n── 常量折叠 (边界) ──");
+test("2 * 3 + 1 → 7", 'var a = 2 * 3 + 1;', constantFolding, 'var a = 7;');
+test("10 % 3 → 1", 'var a = 10 % 3;', constantFolding, 'var a = 1;');
+test("!true → false", 'var a = !true;', constantFolding, 'var a = false;');
+
+// ── 逗号表达式 (边界) ──
+console.log("\n── 逗号表达式 (边界) ──");
+test(
+  "三重逗号拆分",
+  "a = 1, b = 2, c = 3;",
+  commaExpr,
+  "a = 1;\nb = 2;\nc = 3;"
+);
+
+// ── 集成测试 (多插件组合) ──
+console.log("\n── 集成测试 ──");
+(() => {
+  // 模拟真实混淆: hex + 字符串转义 + 逗号 + 死代码
+  const code = 'var _0x1 = 0xff; window["\\x63\\x6f\\x6e\\x73\\x6f\\x6c\\x65"]["\\x6c\\x6f\\x67"](_0x1); if (false) { dead(); }';
+  const ast = parser.parse(code, { sourceType: "script", allowReturnOutsideFunction: true });
+  const plugins = [hexNumber, stringDecoder, constantFolding, memberExpr, deadCode, commaExpr];
+  for (const p of plugins) {
+    traverse(ast, p().visitor);
+  }
+  const result = normalize(generator(ast).code);
+  const pass = result.includes("255") && result.includes("console.log(") && !result.includes("dead()") && !result.includes("0xff");
+  console.log(`${pass ? "✓" : "✗"} hex+string+constant+member+dead 组合`);
+  if (pass) passed++; else { failed++; console.log(`  实际: ${result}`); }
+})();
+
 // ── webpack bundle 模块提取(识别) ──
 console.log("\n── webpack bundle 模块提取(识别) ──");
 (() => {

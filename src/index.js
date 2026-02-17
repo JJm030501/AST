@@ -69,7 +69,7 @@ const DEFAULT_ORDER = [
 ];
 
 function deobfuscate(code, pluginNames, passes) {
-  console.log(chalk.cyan("\n[*] 开始解析 AST..."));
+  console.log(chalk.cyan("\n[*] Parsing AST..."));
   const ast = parser.parse(code, {
     sourceType: "unambiguous",
     allowReturnOutsideFunction: true,
@@ -92,7 +92,7 @@ function deobfuscate(code, pluginNames, passes) {
   });
 
   const originalLines = code.split("\n").length;
-  console.log(chalk.gray(`    源代码: ${code.length} 字符, ${originalLines} 行`));
+  console.log(chalk.gray(`    Source: ${code.length} chars, ${originalLines} lines`));
 
   const maxPasses = Math.max(1, Number.parseInt(passes, 10) || 1);
   for (let pass = 1; pass <= maxPasses; pass++) {
@@ -106,11 +106,11 @@ function deobfuscate(code, pluginNames, passes) {
     for (const name of pluginNames) {
       const pluginFn = PLUGINS[name];
       if (!pluginFn) {
-        console.log(chalk.yellow(`[!] 跳过未知插件: ${name}`));
+        console.log(chalk.yellow(`[!] Unknown plugin: ${name}, skipping`));
         continue;
       }
 
-      console.log(chalk.cyan(`[*] 执行插件: ${name}`));
+      console.log(chalk.cyan(`[*] Running: ${name}`));
       const counter = { count: 0 };
       try {
         const plugin = pluginFn({ counter });
@@ -118,14 +118,14 @@ function deobfuscate(code, pluginNames, passes) {
         traverse(ast, visitor);
       } catch (e) {
         const msg = e && e.message ? e.message : String(e);
-        console.log(chalk.yellow(`    ⚠ 插件 ${name} 执行出错 (已跳过): ${msg}`));
+        console.log(chalk.yellow(`    ⚠ Plugin ${name} error (skipped): ${msg}`));
       }
       const transformCount = Number.isFinite(counter.count) ? counter.count : 0;
       passTransforms += transformCount;
       if (transformCount > 0) {
-        console.log(chalk.green(`    ✓ ${transformCount} 处变换`));
+        console.log(chalk.green(`    ✓ ${transformCount} transforms`));
       } else {
-        console.log(chalk.gray(`    - 无变换`));
+        console.log(chalk.gray(`    - no changes`));
       }
     }
 
@@ -133,15 +133,15 @@ function deobfuscate(code, pluginNames, passes) {
   }
 
   // 生成还原后的代码
-  console.log(chalk.cyan("[*] 生成还原代码..."));
+  console.log(chalk.cyan("[*] Generating output..."));
   const output = generator(ast, {
     comments: true,
     jsescOption: { minimal: true },
   });
 
   const outputLines = output.code.split("\n").length;
-  console.log(chalk.green(`\n[✓] 反混淆完成`));
-  console.log(chalk.gray(`    还原后: ${output.code.length} 字符, ${outputLines} 行`));
+  console.log(chalk.green(`\n[✓] Deobfuscation complete`));
+  console.log(chalk.gray(`    Output: ${output.code.length} chars, ${outputLines} lines`));
 
   return output.code;
 }
@@ -278,7 +278,7 @@ function collectFiles(rootDir, exts, ignoreParts) {
 
 const inputPath = path.resolve(opts.input);
 if (!fs.existsSync(inputPath)) {
-  console.error(chalk.red(`[✗] 路径不存在: ${inputPath}`));
+  console.error(chalk.red(`[✗] Path not found: ${inputPath}`));
   process.exit(1);
 }
 
@@ -314,11 +314,11 @@ function webpackAggregateDirName() {
 }
 
 console.log(chalk.bold("═══════════════════════════════════════"));
-console.log(chalk.bold("  JS AST 自动反混淆工具 v1.0"));
+console.log(chalk.bold("  ast-deobfuscator v1.0"));
 console.log(chalk.bold("═══════════════════════════════════════"));
-console.log(chalk.gray(`  输入: ${inputPath}`));
-console.log(chalk.gray(`  输出: ${resolvedOutput}`));
-console.log(chalk.gray(`  插件: ${pluginNames.join(" → ")}`));
+console.log(chalk.gray(`  Input:   ${inputPath}`));
+console.log(chalk.gray(`  Output:  ${resolvedOutput}`));
+console.log(chalk.gray(`  Plugins: ${pluginNames.join(" → ")}`));
 
 function vmAnalyze(code, reportPath) {
   const ast = parser.parse(code, {
@@ -385,7 +385,7 @@ function vmAnalyze(code, reportPath) {
       reports,
     };
     fs.writeFileSync(reportPath, JSON.stringify(jsonReport, null, 2), "utf-8");
-    console.log(chalk.green(`\n  [VM] 报告已保存: ${reportPath}`));
+    console.log(chalk.green(`\n  [VM] Report saved: ${reportPath}`));
   }
 
   return reports;
@@ -408,12 +408,12 @@ if (!inputIsDir) {
           ? path.join(webpackModulesRoot, webpackAggregateDirName())
           : path.join(webpackModulesRoot, path.basename(inputPath, path.extname(inputPath)));
         const n = writeWebpackModules(extracted, outDir);
-        console.log(chalk.gray(`  webpack 模块导出: ${n} 个 -> ${outDir}`));
+        console.log(chalk.gray(`  Webpack modules exported: ${n} -> ${outDir}`));
       }
     } catch (e) {
       console.log(
         chalk.yellow(
-          `[!] webpack 模块导出失败: ${e && e.message ? e.message : String(e)}`
+          `[!] Webpack extraction failed: ${e && e.message ? e.message : String(e)}`
         )
       );
     }
@@ -421,21 +421,21 @@ if (!inputIsDir) {
 
   const result = deobfuscate(code, pluginNames, opts.passes);
   fs.writeFileSync(resolvedOutput, result, "utf-8");
-  console.log(chalk.green(`\n[✓] 已保存到: ${resolvedOutput}\n`));
+  console.log(chalk.green(`\n[✓] Saved to: ${resolvedOutput}\n`));
 } else {
   if (fs.existsSync(resolvedOutput) && !isDirectory(resolvedOutput)) {
-    console.error(chalk.red(`[✗] 目录输入时，输出必须为目录: ${resolvedOutput}`));
+    console.error(chalk.red(`[✗] Output must be a directory when input is a directory: ${resolvedOutput}`));
     process.exit(1);
   }
 
   ensureDir(resolvedOutput);
   const files = collectFiles(inputPath, exts.length ? exts : [".js", ".mjs", ".cjs"], ignoreParts);
   if (!files.length) {
-    console.log(chalk.yellow("[!] 未找到需要处理的文件"));
+    console.log(chalk.yellow("[!] No files found to process"));
     process.exit(0);
   }
 
-  console.log(chalk.gray(`  批处理: ${files.length} 个文件`));
+  console.log(chalk.gray(`  Batch: ${files.length} files`));
   let ok = 0;
   let fail = 0;
 
@@ -462,7 +462,7 @@ if (!inputIsDir) {
             })();
             const n = writeWebpackModules(extracted, modOut);
             if (n > 0) {
-              console.log(chalk.gray(`  webpack 模块导出: ${n} 个 -> ${modOut}`));
+              console.log(chalk.gray(`  Webpack modules exported: ${n} -> ${modOut}`));
             }
           }
         } catch (e) {}
@@ -474,10 +474,10 @@ if (!inputIsDir) {
       console.log(chalk.green(`[✓] ${rel} -> ${path.relative(process.cwd(), outFile)}`));
     } catch (e) {
       fail++;
-      console.log(chalk.red(`[✗] ${rel} 处理失败: ${e && e.message ? e.message : String(e)}`));
+      console.log(chalk.red(`[✗] ${rel} failed: ${e && e.message ? e.message : String(e)}`));
     }
   }
 
-  console.log(chalk.green(`\n[✓] 批处理完成: ${ok} 成功, ${fail} 失败`));
-  console.log(chalk.green(`    输出目录: ${resolvedOutput}\n`));
+  console.log(chalk.green(`\n[✓] Batch complete: ${ok} succeeded, ${fail} failed`));
+  console.log(chalk.green(`    Output: ${resolvedOutput}\n`));
 }
