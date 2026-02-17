@@ -1,0 +1,5 @@
+test/
+.git/
+*.deob.js
+*.vm-report.json
+node_modules/

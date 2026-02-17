@@ -1,0 +1,41 @@
+{
+  "name": "ast-deobfuscator",
+  "version": "1.0.0",
+  "description": "Babel-based JavaScript deobfuscation CLI — 17 plugins, webpack extraction, VM analysis",
+  "main": "src/index.js",
+  "bin": {
+    "deob": "src/index.js"
+  },
+  "scripts": {
+    "deob": "node src/index.js",
+    "test": "node test/test.js"
+  },
+  "keywords": [
+    "deobfuscate",
+    "javascript",
+    "ast",
+    "babel",
+    "obfuscator",
+    "reverse-engineering",
+    "control-flow",
+    "webpack",
+    "vm-analysis",
+    "anti-obfuscation"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/JJm030501/AST.git"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "dependencies": {
+    "@babel/parser": "^7.24.0",
+    "@babel/traverse": "^7.24.0",
+    "@babel/generator": "^7.24.0",
+    "@babel/types": "^7.24.0",
+    "chalk": "^4.1.2",
+    "commander": "^12.0.0"
+  }
+}
